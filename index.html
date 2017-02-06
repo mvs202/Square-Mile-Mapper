@@ -2,8 +2,7 @@
 <html>
 <head>
 <title>Square-Mile Mapper</title>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-<meta name="viewport" content="initial-scale=1.0, user-scalable=no" />
+<base target="_blank">
 <!--Copyright © 2011 Michael Schade, http://mvjantzen.com -->
 <style>
 html {
@@ -37,6 +36,7 @@ body {
 #controls a {
   color: #FFFFFF;
   text-decoration: none;
+  transition: 0.4s;
   }
 #controls a:hover {
   color: #FF0000;
@@ -87,6 +87,16 @@ function initialize() {
     {featureType: "poi",                     elementType: "geometry",      stylers: [{color: "#000000"}]},
     {featureType: "transit.station.airport", elementType: "geometry.fill", stylers: [{color: "#000000"}]}
     ];
+  var lat =  38.895;
+  var lng = -77.074;
+  var homeParameter = parameter("home");
+  if (homeParameter) {
+    var homeCoords = homeParameter.replace(/\s/g, '').split(",");
+    if (homeCoords.length == 2) {
+      var lat = parseFloat(homeCoords[0]);
+      var lng = parseFloat(homeCoords[1]);
+      }
+    }
   var mapOptions = {
     zoom: 14,
     disableDoubleClickZoom: true,
@@ -97,7 +107,7 @@ function initialize() {
     styles: styles
     }
   map = new google.maps.Map(document.getElementById("map_canvas"), mapOptions);
-  map.setCenter(new google.maps.LatLng(38.894239,-77.028008));
+  map.setCenter(new google.maps.LatLng(lat, lng));
   square = new google.maps.Rectangle({
     strokeColor: '#FF0000',
     strokeOpacity: 1.05,
@@ -188,6 +198,12 @@ Use "Draw over border" option for square's border to be centered on perimeter
 (thus, half of red line will overlap the selected area).
 Use "Draw outside border" option if you want the selected area to be snuggly inside the red perimeter.
 <p>
-Created by <a href="https://twitter.com/mvs202">@mvs202</a> for <a href="https://twitter.com/mobilitylabteam">@mobilitylabteam</a> and <a href="https://twitter.com/walkarlington">@walkarlington</a></div>
+Created by <a href="https://twitter.com/mvs202">@mvs202</a> for
+<a href="https://twitter.com/mobilitylabteam">@mobilitylabteam</a> and
+<a href="https://twitter.com/walkarlington">@walkarlington</a>.
+Inspired by <a href="http://geoffboeing.com/">Geoff Boeing</a>'s
+(<a href="https://twitter.com/gboeing">@gboeing</a>)
+<a href="http://geoffboeing.com/2017/01/square-mile-street-network-visualization/">Square-Mile Street Network Visualization</a>,
+after Allan B. Jacobs' <a href="https://mitpress.mit.edu/authors/allan-b-jacobs">Great Streets</a>.</div>
 </body>
 </html>
