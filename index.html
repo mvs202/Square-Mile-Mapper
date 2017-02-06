@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Square-Mile Mapper</title>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<meta name="viewport" content="initial-scale=1.0, user-scalable=no" />
+<!--Copyright © 2011 Michael Schade, http://mvjantzen.com -->
+<style>
+html {
+  height: 100%;
+  }
+body {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  font-family: verdana, sans-serif;
+  }
+#map_canvas {
+  height: 100%
+  }
+#controls {
+  color: #FFFFFF;
+  background-color: rgba(34, 34, 34, 0.5);
+  padding: 4px;
+  position: absolute;
+  top: 0;
+  right: 0;
+  max-width: 240px;
+  border-bottom: 5px solid #444444;
+  transition: 0.4s;
+  }
+#controls p {
+  font-size: 10px;
+  color: #FFFFFF;
+  text-shadow: 1px 1px #000000;
+  }
+#controls a {
+  color: #FFFFFF;
+  text-decoration: none;
+  }
+#controls a:hover {
+  color: #FF0000;
+  text-decoration: underline;
+  }
+</style>
+<script src="http://maps.googleapis.com/maps/api/js?libraries=places"></script>
+<script>
+  var _gaq = _gaq || [];
+  _gaq.push(['_setAccount', 'UA-24842081-1']);
+  _gaq.push(['_trackPageview']);
+
+  (function() {
+    var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+    ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+  })();
+</script>
+</head>
+<script>
+var map;
+var square;
+var overlay;
+var drawOverBorder = true;  // if false, draw OUTSIDE border
+
+function movepoint(start, bearing, distance) {
+  // start is a Google Maps latLng object
+  // bearing is a direction in radians; 0 = north, π/2 = east, π = south, π*3/4 = west
+  // distance is km from start point
+  var earthsMeanRadius = 6371;  // km
+  distance = distance/earthsMeanRadius;
+  var lat1 = start.lat()*Math.PI/180;
+  var lon1 = start.lng()*Math.PI/180;
+  var lat2 = Math.asin(Math.sin(lat1)*Math.cos(distance) +
+                       Math.cos(lat1)*Math.sin(distance)*Math.cos(bearing));
+  var lon2 = lon1 + Math.atan2(Math.sin(bearing)*Math.sin(distance)*Math.cos(lat1),
+                               Math.cos(distance) - Math.sin(lat1)*Math.sin(lat2));
+  return new google.maps.LatLng(lat2*180/Math.PI, lon2*180/Math.PI);
+  }
+
+function initialize() {
+  var styles = [
+    {stylers: [{saturation: -100}, {gamma: 1}]},
+    {featureType: "all",                     elementType: "labels",        stylers: [{visibility: "off"}]},
+    {featureType: "road",                    elementType: "geometry",      stylers: [{visibility: "simplified"}, {color: "#FFFFFF"}]},
+    {featureType: "water",                                                 stylers: [{color: "#000000"}]},
+    {featureType: "landscape",               elementType: "geometry",      stylers: [{color: "#000000"}]},
+    {featureType: "poi",                     elementType: "geometry",      stylers: [{color: "#000000"}]},
+    {featureType: "transit.station.airport", elementType: "geometry.fill", stylers: [{color: "#000000"}]}
+    ];
+  var mapOptions = {
+    zoom: 14,
+    disableDoubleClickZoom: true,
+    panControl: false,
+    scrollwheel: false,
+    streetViewControl: false,
+    mapTypeId: google.maps.MapTypeId.ROADMAP,
+    styles: styles
+    }
+  map = new google.maps.Map(document.getElementById("map_canvas"), mapOptions);
+  map.setCenter(new google.maps.LatLng(38.894239,-77.028008));
+  square = new google.maps.Rectangle({
+    strokeColor: '#FF0000',
+    strokeOpacity: 1.05,
+    strokeWeight: 5,
+    fillOpacity: 0.0,
+    draggable: true,
+    map: map
+    });
+  map.addListener('zoom_changed', function(e) {
+    if (!drawOverBorder) {
+      positionSquare(square.getCenter());
+      }
+    });
+  map.addListener('dblclick', function(e) {
+    positionSquare(e.latLng);
+    });
+  square.addListener('dblclick', function(e) {
+    positionSquare(e.latLng);
+    });
+  }
+
+function positionSquare(center) {
+  var halfMile = 0.80467;  // km
+  var north = movepoint(center, 0, halfMile).lat();
+  var east = movepoint(center, Math.PI*0.5, halfMile).lng();
+  var south = movepoint(center, Math.PI, halfMile).lat();
+  var west = movepoint(center, Math.PI*1.5, halfMile).lng();
+  var sw = new google.maps.LatLng(south, west);
+  var ne = new google.maps.LatLng(north, east);
+  if (drawOverBorder) {
+    var bounds = new google.maps.LatLngBounds(sw, ne);
+    }
+  else {
+    var bounds = growSquareOutsideBorder(sw, ne);
+    }
+  square.setBounds(bounds);
+  }
+
+function growSquareOutsideBorder(sw, ne) {
+  // expand the square by 3 pixels:
+  var swPixels = fromLatLngToPoint(sw);
+  var nePixels = fromLatLngToPoint(ne);
+  swPixels = new google.maps.Point(swPixels.x - 3, swPixels.y + 3);
+  nePixels = new google.maps.Point(nePixels.x + 3, nePixels.y - 3);
+  sw = fromPointToLatLng(swPixels);
+  ne = fromPointToLatLng(nePixels);
+  return new google.maps.LatLngBounds(sw, ne);
+  }
+
+function changeSquare(dropdown) {
+  drawOverBorder = dropdown.selectedIndex == 0;
+  positionSquare(square.getBounds().getCenter());
+  }
+
+function fromPointToLatLng(point) {
+  var projection = map.getProjection();
+  var topRight = projection.fromLatLngToPoint(map.getBounds().getNorthEast());
+  var bottomLeft = projection.fromLatLngToPoint(map.getBounds().getSouthWest());
+  var scale = 1 << map.getZoom();
+  return projection.fromPointToLatLng(new google.maps.Point(point.x/scale + bottomLeft.x, point.y/scale + topRight.y));
+  };
+
+function fromLatLngToPoint(latLng) {
+	var topRight = map.getProjection().fromLatLngToPoint(map.getBounds().getNorthEast());
+	var bottomLeft = map.getProjection().fromLatLngToPoint(map.getBounds().getSouthWest());
+	var scale = Math.pow(2, map.getZoom());
+	var worldPoint = map.getProjection().fromLatLngToPoint(latLng);
+	return new google.maps.Point((worldPoint.x - bottomLeft.x)*scale, (worldPoint.y - topRight.y)*scale);
+  }
+
+function fitToMap() {
+  map.fitBounds(square.getBounds());
+  }
+</script>
+<body onload="initialize()">
+<div id="map_canvas"></div>
+<div id="controls"><button type="button" onclick="fitToMap()">Fit to map</button>
+  <select id="overOutside" onchange="changeSquare(this)">
+    <option selected>Draw over border</option>
+    <option>Draw outside border</option>
+  </select>
+<p>
+Square-Mile Mapper
+<p>
+Double-click map to re-center square. Drag red square to new position.
+<p>
+Use "Draw over border" option for square's border to be centered on perimeter
+(thus, half of red line will overlap the selected area).
+Use "Draw outside border" option if you want the selected area to be snuggly inside the red perimeter.
+<p>
+Created by <a href="https://twitter.com/mvs202">@mvs202</a> for <a href="https://twitter.com/mobilitylabteam">@mobilitylabteam</a> and <a href="https://twitter.com/walkarlington">@walkarlington</a></div>
+</body>
+</html>
