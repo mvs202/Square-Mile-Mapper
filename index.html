@@ -62,6 +62,19 @@ var square;
 var overlay;
 var drawOverBorder = true;  // if false, draw OUTSIDE border
 
+function parameter(name) {
+  // return the value of parameter "name" in the URL's query string
+  var queryStr = window.location.href.substring(window.location.href.indexOf('?') + 1).split("&");
+  for (var i = 0; i < queryStr.length; i++) {
+    var param = queryStr[i].split('=');
+    if (param[0] == name) {
+      if (param.length > 1) {return param[1];}  // found
+      else                  {return "";}        // found, but has no value
+      }
+    }
+  return null;  // not found
+  }
+
 function movepoint(start, bearing, distance) {
   // start is a Google Maps latLng object
   // bearing is a direction in radians; 0 = north, π/2 = east, π = south, π*3/4 = west
