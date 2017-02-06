@@ -61,6 +61,7 @@ var map;
 var square;
 var overlay;
 var drawOverBorder = true;  // if false, draw OUTSIDE border
+homeObj = null;
 
 function parameter(name) {
   // return the value of parameter "name" in the URL's query string
@@ -100,17 +101,24 @@ function initialize() {
     {featureType: "poi",                     elementType: "geometry",      stylers: [{color: "#000000"}]},
     {featureType: "transit.station.airport", elementType: "geometry.fill", stylers: [{color: "#000000"}]}
     ];
-  var lat =  38.895;
-  var lng = -77.074;
+  var center = null;
   var homeParameter = parameter("home");
   if (homeParameter) {
     var homeCoords = homeParameter.replace(/\s/g, '').split(",");
     if (homeCoords.length == 2) {
       var lat = parseFloat(homeCoords[0]);
       var lng = parseFloat(homeCoords[1]);
+      center = new google.maps.LatLng(lat, lng);
+      }
+    else {
+      homeParameter = false;
       }
     }
+  if (!center) {
+    center = new google.maps.LatLng(38.895, -77.074);  // default to DC
+    }
   var mapOptions = {
+    center: center,
     zoom: 14,
     disableDoubleClickZoom: true,
     panControl: false,
@@ -120,7 +128,6 @@ function initialize() {
     styles: styles
     }
   map = new google.maps.Map(document.getElementById("map_canvas"), mapOptions);
-  map.setCenter(new google.maps.LatLng(lat, lng));
   square = new google.maps.Rectangle({
     strokeColor: '#FF0000',
     strokeOpacity: 1.05,
@@ -140,6 +147,10 @@ function initialize() {
   square.addListener('dblclick', function(e) {
     positionSquare(e.latLng);
     });
+  if (homeParameter) {
+    positionSquare(center);
+    map.fitBounds(square.getBounds());
+    }
   }
 
 function positionSquare(center) {
