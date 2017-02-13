@@ -151,18 +151,23 @@ function initialize() {
     });
   map.addListener('dblclick', function(e) {
     positionSquare(e.latLng);
+    getGeocode(e.latLng);
     });
   square.addListener('dblclick', function(e) {
     positionSquare(e.latLng);
+    getGeocode(e.latLng);
+    });
+  square.addListener('dragend', function(e) {
+    // if latitude was changed, the square will need to be recalculated
+    positionSquare(e.latLng);
+    getGeocode(e.latLng);
     });
   if (homeParameter) {
     positionSquare(center);
     map.fitBounds(square.getBounds());
     }
   var autocomplete = new google.maps.places.Autocomplete(
-    document.getElementById('pac-input')
-    ,
-    {types: ['geocode']}
+    document.getElementById('pac-input'), {types: ['geocode']}
     );
   autocomplete.addListener('place_changed', function placeChanged() {
     var place = autocomplete.getPlace();
@@ -193,6 +198,21 @@ function positionSquare(center) {
     var bounds = growSquareOutsideBorder(sw, ne);
     }
   square.setBounds(bounds);
+  }
+
+function getGeocode(center) {
+  geocoder.geocode({'location': center}, function(results, status) {
+    if (status === 'OK' && results[1]) {
+      var placeName = "";
+      var i = 0;
+      // search responses for one matching "neighborhood"
+      // also accept "political" - for catching cities with no neighborhoods
+      while (results[i] && results[i].types.indexOf("neighborhood") < 0 && results[i].types.indexOf("political") < 0) {i++;}
+      if (i < results.length) {placeName = results[i].formatted_address}
+      document.getElementById("pac-input").placeholder = "";  // Google bug
+      document.getElementById("pac-input").value = placeName;
+      }
+    });
   }
 
 function growSquareOutsideBorder(sw, ne) {
