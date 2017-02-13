@@ -3,7 +3,7 @@
 <head>
 <title>Square-Mile Mapper</title>
 <base target="_blank">
-<!--Copyright © 2011 Michael Schade, http://mvjantzen.com -->
+<!--Copyright © 2017 Michael Schade, http://mvjantzen.com -->
 <style>
 html {
   height: 100%;
@@ -77,9 +77,10 @@ function parameter(name) {
   }
 
 function movepoint(start, bearing, distance) {
-  // start is a Google Maps latLng object
+  // start is a Google Maps latLng object, the center of the square
   // bearing is a direction in radians; 0 = north, π/2 = east, π = south, π*3/4 = west
   // distance is km from start point
+  console.log(start.lat()+","+start.lng());
   var earthsMeanRadius = 6371;  // km
   distance = distance/earthsMeanRadius;
   var lat1 = start.lat()*Math.PI/180;
@@ -151,6 +152,22 @@ function initialize() {
     positionSquare(center);
     map.fitBounds(square.getBounds());
     }
+  var autocomplete = new google.maps.places.Autocomplete(
+    document.getElementById('pac-input'), 
+    {types: ['locality', 'sublocality', 'colloquial_area', 'neighborhood', 'airport', 'park', 'point_of_interest']}
+    );
+  autocomplete.addListener('place_changed', function placeChanged() {
+    var place = autocomplete.getPlace();
+    if (place.geometry && place.geometry.location) {
+      var location = place.geometry.location;
+      positionSquare(location);
+      map.fitBounds(square.getBounds());
+      }
+    else {
+      window.alert("Can't find geometry for location");
+      }
+    });
+  geocoder = new google.maps.Geocoder;
   }
 
 function positionSquare(center) {
@@ -208,7 +225,9 @@ function fitToMap() {
 </script>
 <body onload="initialize()">
 <div id="map_canvas"></div>
-<div id="controls"><button type="button" onclick="fitToMap()">Fit to map</button>
+<div id="controls">
+<input id="pac-input" placeholder="Enter a location"><br>
+<button type="button" onclick="fitToMap()">Fit to map</button>
   <select id="overOutside" onchange="changeSquare(this)">
     <option selected>Draw over border</option>
     <option>Draw outside border</option>
