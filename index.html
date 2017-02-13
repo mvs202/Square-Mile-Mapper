@@ -50,6 +50,10 @@ body {
   width: 100%;
   box-sizing: border-box;
   }
+#title {
+  color: red;
+  transition: 0.8s;
+  }
 </style>
 <script src="https://maps.googleapis.com/maps/api/js?libraries=places&key=AIzaSyAC2Gly8X2mFKSRkUrwLKMWQvUYS54QhsA"></script>
 <script>
@@ -65,11 +69,13 @@ body {
 </script>
 </head>
 <script>
+// Google objects:
 var map;
+var geocoder;
+// Global variables:
 var square;
-var overlay;
+var homeLatLng = null;
 var drawOverBorder = true;  // if false, draw OUTSIDE border
-homeObj = null;
 
 function parameter(name) {
   // return the value of parameter "name" in the URL's query string
@@ -109,24 +115,20 @@ function initialize() {
     {featureType: "poi",                     elementType: "geometry",      stylers: [{color: "#000000"}]},
     {featureType: "transit.station.airport", elementType: "geometry.fill", stylers: [{color: "#000000"}]}
     ];
-  var center = null;
   var homeParameter = parameter("home");
   if (homeParameter) {
     var homeCoords = homeParameter.replace(/\s/g, '').split(",");
     if (homeCoords.length == 2) {
       var lat = parseFloat(homeCoords[0]);
       var lng = parseFloat(homeCoords[1]);
-      center = new google.maps.LatLng(lat, lng);
-      }
-    else {
-      homeParameter = false;
+      homeLatLng = new google.maps.LatLng(lat, lng);
       }
     }
-  if (!center) {
-    center = new google.maps.LatLng(38.895, -77.074);  // default to DC
+  if (!homeLatLng) {
+    homeLatLng = new google.maps.LatLng(38.895, -77.074);  // default to DC
     }
   var mapOptions = {
-    center: center,
+    center: homeLatLng,
     zoom: 14,
     disableDoubleClickZoom: true,
     panControl: false,
@@ -162,11 +164,6 @@ function initialize() {
     positionSquare(e.latLng);
     getGeocode(e.latLng);
     });
-  if (homeParameter) {
-    positionSquare(center);
-    getGeocode(center);
-    map.fitBounds(square.getBounds());
-    }
   var autocomplete = new google.maps.places.Autocomplete(
     document.getElementById('pac-input'), {types: ['geocode']}
     );
@@ -182,6 +179,16 @@ function initialize() {
       }
     });
   geocoder = new google.maps.Geocoder;
+  if (homeLatLng) {
+    positionSquare(homeLatLng);
+    map.fitBounds(square.getBounds());
+    }
+  google.maps.event.addListenerOnce(map, 'tilesloaded', function() {
+    if (homeLatLng) {
+      getGeocode(homeLatLng);
+      }
+    document.getElementById("title").style.color = "white";
+    });
   }
 
 function positionSquare(center) {
@@ -262,7 +269,7 @@ function fitToMap() {
     <option>Draw outside border</option>
   </select>
 <p>
-Square-Mile Mapper
+<span id="title">Square-Mile Mapper</span>
 <p>
 Double-click map to re-center square. Drag red square to new position.
 <p>
