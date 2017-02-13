@@ -164,6 +164,7 @@ function initialize() {
     });
   if (homeParameter) {
     positionSquare(center);
+    getGeocode(center);
     map.fitBounds(square.getBounds());
     }
   var autocomplete = new google.maps.places.Autocomplete(
