@@ -45,14 +45,15 @@ body {
 #pac-input {
   background-color: #fff;
   font-family: verdana, sans-serif;
-  padding: 0 10px;
+  padding: 0 5px;
   text-overflow: ellipsis;
   width: 100%;
   box-sizing: border-box;
   }
 #title {
   color: red;
-  transition: 0.8s;
+  transition: 1.6s;
+  text-transform: uppercase;
   }
 </style>
 <script src="https://maps.googleapis.com/maps/api/js?libraries=places&key=AIzaSyAC2Gly8X2mFKSRkUrwLKMWQvUYS54QhsA"></script>
@@ -105,6 +106,12 @@ function movepoint(start, bearing, distance) {
   return new google.maps.LatLng(lat2*180/Math.PI, lon2*180/Math.PI);
   }
 
+function geolocate(position) {
+  homeLatLng = new google.maps.LatLng(position.coords.latitude, position.coords.longitude);
+  positionSquare(homeLatLng);
+  getGeocode(homeLatLng);
+  }
+
 function initialize() {
   var styles = [
     {stylers: [{saturation: -100}, {gamma: 1}]},
@@ -126,6 +133,9 @@ function initialize() {
     }
   if (!homeLatLng) {
     homeLatLng = new google.maps.LatLng(38.895, -77.074);  // default to DC
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(geolocate);
+      }
     }
   var mapOptions = {
     center: homeLatLng,
@@ -262,14 +272,13 @@ function fitToMap() {
 <body onload="initialize()">
 <div id="map_canvas"></div>
 <div id="controls">
+<span id="title">Square-Mile Mapper</span><br>
 <input id="pac-input" placeholder="Enter a location"><br>
 <button type="button" onclick="fitToMap()">Fit to map</button>
   <select id="overOutside" onchange="changeSquare(this)">
     <option selected>Draw over border</option>
     <option>Draw outside border</option>
   </select>
-<p>
-<span id="title">Square-Mile Mapper</span>
 <p>
 Double-click map to re-center square. Drag red square to new position.
 <p>
