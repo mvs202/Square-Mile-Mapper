@@ -109,6 +109,7 @@ function movepoint(start, bearing, distance) {
 function geolocate(position) {
   homeLatLng = new google.maps.LatLng(position.coords.latitude, position.coords.longitude);
   positionSquare(homeLatLng);
+  map.fitBounds(square.getBounds());
   getGeocode(homeLatLng);
   }
 
